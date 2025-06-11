@@ -14,7 +14,10 @@ def create_cnn_model(input_shape=(224, 224, 3), num_classes=2):
         layers.Dense(64, activation='relu'),
         layers.Dense(num_classes, activation='softmax')
     ])
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    # Use sparse categorical cross-entropy so labels can be integers
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
     return model
 
 if __name__ == "__main__":
