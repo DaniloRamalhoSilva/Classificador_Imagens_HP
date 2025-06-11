@@ -1,0 +1,6 @@
+# Python dependencies for HP cartridge classifier
+tensorflow
+numpy
+scikit-learn
+matplotlib
+seaborn
