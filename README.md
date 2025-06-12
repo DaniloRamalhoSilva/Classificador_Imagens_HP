@@ -36,3 +36,4 @@ Após o treinamento, espere visualizar gráficos de acurácia e perda, além da 
 ## Possibilidades Futuras ⚡
 - Converter o modelo final para o formato `.tflite` e rodá-lo em dispositivos móveis.
 
+- Utilize `convert_webp_to_png.py` para converter imagens `.webp` para `.png`.
