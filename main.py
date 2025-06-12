@@ -12,28 +12,41 @@ EPOCHS = 5
 VALIDATION_SPLIT = 0.2
 
 
-def load_dataset(data_dir=DATA_DIR, img_size=IMG_SIZE, batch_size=BATCH_SIZE, validation_split=VALIDATION_SPLIT):
-    """Load training and validation datasets."""
-    train_ds = tf.keras.utils.image_dataset_from_directory(
-        data_dir,
-        validation_split=validation_split,
-        subset="training",
-        seed=123,
-        image_size=img_size,
-        batch_size=batch_size,
-    )
-    val_ds = tf.keras.utils.image_dataset_from_directory(
-        data_dir,
-        validation_split=validation_split,
-        subset="validation",
-        seed=123,
-        image_size=img_size,
-        batch_size=batch_size,
-    )
+def load_dataset(
+    data_dir: str = DATA_DIR,
+    img_size: tuple = IMG_SIZE,
+    batch_size: int = BATCH_SIZE,
+    validation_split: float = VALIDATION_SPLIT,
+):
+    """Load datasets from directories including .webp images."""
 
-    autotune = tf.data.AUTOTUNE
-    train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=autotune)
-    val_ds = val_ds.cache().prefetch(buffer_size=autotune)
+    class_dirs = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))]
+    images, labels = [], []
+
+    for label, class_name in enumerate(sorted(class_dirs)):
+        class_path = os.path.join(data_dir, class_name)
+        for fname in os.listdir(class_path):
+            file_path = os.path.join(class_path, fname)
+            if not os.path.isfile(file_path):
+                continue
+            try:
+                img = tf.keras.utils.load_img(file_path, target_size=img_size)
+            except Exception:
+                # Skip unreadable files
+                continue
+            img_array = tf.keras.utils.img_to_array(img) / 255.0
+            images.append(img_array)
+            labels.append(label)
+
+    images = np.array(images)
+    labels = np.array(labels)
+
+    dataset = tf.data.Dataset.from_tensor_slices((images, labels))
+    dataset = dataset.shuffle(len(images), seed=123)
+
+    val_size = int(len(images) * validation_split)
+    val_ds = dataset.take(val_size).batch(batch_size).prefetch(tf.data.AUTOTUNE)
+    train_ds = dataset.skip(val_size).batch(batch_size).prefetch(tf.data.AUTOTUNE)
     return train_ds, val_ds
 
 
