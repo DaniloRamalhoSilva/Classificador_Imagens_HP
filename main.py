@@ -1,9 +1,16 @@
 import os
 import numpy as np
 import tensorflow as tf
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import (
+    confusion_matrix,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+)
 
 from cnn_model import create_cnn_model
+from convert_webp_to_png import convert_webp_to_png
 
 DATA_DIR = 'dataset'
 IMG_SIZE = (224, 224)
@@ -64,6 +71,7 @@ def evaluate(model, val_ds):
 
 
 def main():
+    convert_webp_to_png(DATA_DIR)
     train_ds, val_ds = load_dataset()
     model = create_cnn_model(num_classes=2)
     train(model, train_ds, val_ds)
