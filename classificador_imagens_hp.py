@@ -10,27 +10,29 @@ Original file is located at
 #!pip install tensorflow==2.10.0 numpy==1.24.3 scikit-learn==1.3.0 matplotlib==3.7.1 seaborn==0.12.2
 
 import os
-import numpy as np
-import math
 import tensorflow as tf
-import matplotlib.pyplot as plt
-import pickle
 
 from tensorflow.keras import layers, models
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc, classification_report
-from sklearn.metrics import precision_recall_curve, average_precision_score
+
+from graphs import (
+    plot_history,
+    plot_confusion,
+    plot_roc,
+    plot_pr_curve,
+    plot_classification_report,
+)
 
 # Use directories relative to this script so it works locally and in
 # environments like Google Colab.
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'dataset')
-GRAPH_DIR = os.path.join(os.path.dirname(__file__), 'graficos')
-os.makedirs(GRAPH_DIR, exist_ok=True)
 IMG_SIZE = (224, 224)
 BATCH_SIZE = 16
 EPOCHS = 10
 VALIDATION_SPLIT = 0.2
 
 def create_cnn_model(input_shape=(224, 224, 3), num_classes=None, class_names=None):
+    """Constroi uma CNN simples para classificar as imagens."""
+
     if num_classes is None:
         if class_names is None:
             raise ValueError("Informe num_classes ou class_names")
@@ -53,11 +55,15 @@ def create_cnn_model(input_shape=(224, 224, 3), num_classes=None, class_names=No
                   metrics=['accuracy'])
     return model
 
-def load_dataset(data_dir=DATA_DIR,
-                 img_size=IMG_SIZE,
-                 batch_size=BATCH_SIZE,
-                 validation_split=VALIDATION_SPLIT):
-    # 1) Carrega os datasets “puros” (ainda com class_names)
+def load_dataset(
+    data_dir=DATA_DIR,
+    img_size=IMG_SIZE,
+    batch_size=BATCH_SIZE,
+    validation_split=VALIDATION_SPLIT,
+):
+    """Carrega imagens do diretório e retorna datasets de treino e validação."""
+
+    # 1) Carrega os datasets "puros" (ainda com class_names)
     train_raw = tf.keras.utils.image_dataset_from_directory(
         data_dir,
         validation_split=validation_split,
@@ -86,137 +92,32 @@ def load_dataset(data_dir=DATA_DIR,
     return train_ds, val_ds, class_names
 
 def train(model, train_ds, val_ds, epochs=EPOCHS):
+    """Treina ``model`` com o dataset de treino e validação."""
+
     history = model.fit(train_ds, epochs=epochs, validation_data=val_ds)
     return history
 
-def plot_history(history):
-    # Acurácia
-    plt.figure(figsize=(8, 4))
-    plt.plot(history.history['accuracy'], label='treino')
-    plt.plot(history.history['val_accuracy'], label='validação')
-    plt.title('Acurácia por Época')
-    plt.xlabel('Época')
-    plt.ylabel('Acurácia')
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(GRAPH_DIR, 'history_accuracy.png'))
-    plt.close()
-
-    # Loss
-    plt.figure(figsize=(8, 4))
-    plt.plot(history.history['loss'], label='treino')
-    plt.plot(history.history['val_loss'], label='validação')
-    plt.title('Loss por Época')
-    plt.xlabel('Época')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(GRAPH_DIR, 'history_loss.png'))
-    plt.close()
-
-def plot_confusion(model, val_ds, class_names):
-    # Coleta labels verdadeiros
-    y_true = np.concatenate([y.numpy() for x, y in val_ds], axis=0)
-    # Previsões
-    y_prob = model.predict(val_ds)
-    y_pred = np.argmax(y_prob, axis=1)
-
-    # Garante matriz quadrada para todas as classes
-    all_labels = np.arange(len(class_names))
-    cm = confusion_matrix(y_true, y_pred, labels=all_labels)
-
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
-                                  display_labels=class_names)
-    disp.plot(cmap=plt.cm.Blues, values_format='d')
-    plt.title('Matriz de Confusão')
-    plt.tight_layout()
-    plt.savefig(os.path.join(GRAPH_DIR, 'confusion_matrix.png'))
-    plt.close()
-
-def plot_roc(model, val_ds):
-    # coleta verdadeiros e probabilidades da classe positiva
-    y_true = np.concatenate([y.numpy() for x, y in val_ds], axis=0)
-    y_prob = model.predict(val_ds)[:, 1]  # probabilidade da classe “1”
-
-    fpr, tpr, _ = roc_curve(y_true, y_prob)
-    roc_auc = auc(fpr, tpr)
-
-    plt.figure(figsize=(6,6))
-    plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.2f}')
-    plt.plot([0,1], [0,1], '--', label='Random')
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Curva ROC')
-    plt.legend(loc='lower right')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(GRAPH_DIR, 'roc_curve.png'))
-    plt.close()
-
-def plot_pr_curve(model, val_ds):
-    y_true = np.concatenate([y.numpy() for x, y in val_ds], axis=0)
-    y_prob = model.predict(val_ds)[:, 1]
-
-    precision, recall, _ = precision_recall_curve(y_true, y_prob)
-    ap = average_precision_score(y_true, y_prob)
-
-    plt.figure(figsize=(6,6))
-    plt.plot(recall, precision, label=f'AP = {ap:.2f}')
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.title('Curva Precision-Recall')
-    plt.legend(loc='upper right')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(os.path.join(GRAPH_DIR, 'pr_curve.png'))
-    plt.close()
-
-def plot_classification_report(model, val_ds, class_names):
-    y_true = np.concatenate([y.numpy() for x, y in val_ds], axis=0)
-    y_pred = np.argmax(model.predict(val_ds), axis=1)
-
-    report = classification_report(y_true, y_pred, target_names=class_names, output_dict=True)
-    # extrai as métricas
-    precisions = [report[c]['precision'] for c in class_names]
-    recalls    = [report[c]['recall']    for c in class_names]
-    f1s        = [report[c]['f1-score']  for c in class_names]
-
-    x = np.arange(len(class_names))
-    width = 0.25
-
-    plt.figure(figsize=(8,4))
-    plt.bar(x - width, precisions, width, label='Precision')
-    plt.bar(x, recalls,    width, label='Recall')
-    plt.bar(x + width, f1s, width, label='F1-score')
-    plt.xticks(x, class_names)
-    plt.ylabel('Score')
-    plt.title('Métricas por Classe')
-    plt.legend()
-    plt.grid(True, axis='y')
-    plt.tight_layout()
-    plt.savefig(os.path.join(GRAPH_DIR, 'classification_report.png'))
-    plt.close()
 
 
 def main():
-    train_ds, val_ds, class_names = load_dataset()           # agora só 2 classes
-    model = create_cnn_model(num_classes=2)      # ou só create_cnn_model()
+    """Executa o pipeline de treinamento e gera os gráficos de avaliação."""
+
+    # Prepara os datasets de treino e validação
+    train_ds, val_ds, class_names = load_dataset()
+
+    # Cria e treina o modelo
+    model = create_cnn_model(num_classes=2)
     history = train(model, train_ds, val_ds)
 
+    # Salva o modelo treinado
     model.save('hp_classifier.h5')
     print('Modelo salvo em hp_classifier.h5')
 
-    plot_history(history)                       # plota curvas
-
-    # agora funciona sem erro
+    # Gera gráficos de desempenho
+    plot_history(history)
     plot_confusion(model, val_ds, class_names)
-
     plot_roc(model, val_ds)
-
     plot_pr_curve(model, val_ds)
-
     plot_classification_report(model, val_ds, class_names)
 
 
