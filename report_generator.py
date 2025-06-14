@@ -28,7 +28,8 @@ def generate_sprint1_report(report_path="SPRINT1_REPORT.md"):
     # Cria e treina o modelo
     model = create_cnn_model(num_classes=len(class_names))
     history = train(model, train_ds, val_ds)
-
+    model.save('hp_classifier.h5')
+    
     # Obtém resumo do modelo
     buf = io.StringIO()
     model.summary(print_fn=lambda x: buf.write(x + "\n"))
