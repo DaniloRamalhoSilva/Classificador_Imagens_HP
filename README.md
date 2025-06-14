@@ -31,7 +31,7 @@ dataset/
 4. Execute as células para treinar e avaliar o modelo.
 
 ## Resultados Esperados 🎉
-Após o treinamento, espere visualizar gráficos de acurácia e perda, além da matriz de confusão para validar o desempenho do classificador.
+Após o treinamento, os gráficos de acurácia, perda e avaliação são salvos na pasta `graficos/`. Abra esses arquivos para verificar o desempenho do classificador.
 
 ## Possibilidades Futuras ⚡
 - Converter o modelo final para o formato `.tflite` e rodá-lo em dispositivos móveis.

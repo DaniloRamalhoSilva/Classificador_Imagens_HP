@@ -18,3 +18,5 @@ __pycache__/
 # Banco de dados local (se aplicável)
 *.sqlite3
 *.db
+hp_classifier.h5
+graficos/

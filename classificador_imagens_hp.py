@@ -20,7 +20,11 @@ from tensorflow.keras import layers, models
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc, classification_report
 from sklearn.metrics import precision_recall_curve, average_precision_score
 
-DATA_DIR = '/content/dataset'
+# Use directories relative to this script so it works locally and in
+# environments like Google Colab.
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'dataset')
+GRAPH_DIR = os.path.join(os.path.dirname(__file__), 'graficos')
+os.makedirs(GRAPH_DIR, exist_ok=True)
 IMG_SIZE = (224, 224)
 BATCH_SIZE = 16
 EPOCHS = 10
@@ -87,7 +91,7 @@ def train(model, train_ds, val_ds, epochs=EPOCHS):
 
 def plot_history(history):
     # Acurácia
-    plt.figure(figsize=(8,4))
+    plt.figure(figsize=(8, 4))
     plt.plot(history.history['accuracy'], label='treino')
     plt.plot(history.history['val_accuracy'], label='validação')
     plt.title('Acurácia por Época')
@@ -95,10 +99,12 @@ def plot_history(history):
     plt.ylabel('Acurácia')
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAPH_DIR, 'history_accuracy.png'))
+    plt.close()
 
     # Loss
-    plt.figure(figsize=(8,4))
+    plt.figure(figsize=(8, 4))
     plt.plot(history.history['loss'], label='treino')
     plt.plot(history.history['val_loss'], label='validação')
     plt.title('Loss por Época')
@@ -106,7 +112,9 @@ def plot_history(history):
     plt.ylabel('Loss')
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAPH_DIR, 'history_loss.png'))
+    plt.close()
 
 def plot_confusion(model, val_ds, class_names):
     # Coleta labels verdadeiros
@@ -123,7 +131,9 @@ def plot_confusion(model, val_ds, class_names):
                                   display_labels=class_names)
     disp.plot(cmap=plt.cm.Blues, values_format='d')
     plt.title('Matriz de Confusão')
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAPH_DIR, 'confusion_matrix.png'))
+    plt.close()
 
 def plot_roc(model, val_ds):
     # coleta verdadeiros e probabilidades da classe positiva
@@ -141,7 +151,9 @@ def plot_roc(model, val_ds):
     plt.title('Curva ROC')
     plt.legend(loc='lower right')
     plt.grid(True)
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAPH_DIR, 'roc_curve.png'))
+    plt.close()
 
 def plot_pr_curve(model, val_ds):
     y_true = np.concatenate([y.numpy() for x, y in val_ds], axis=0)
@@ -157,7 +169,9 @@ def plot_pr_curve(model, val_ds):
     plt.title('Curva Precision-Recall')
     plt.legend(loc='upper right')
     plt.grid(True)
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAPH_DIR, 'pr_curve.png'))
+    plt.close()
 
 def plot_classification_report(model, val_ds, class_names):
     y_true = np.concatenate([y.numpy() for x, y in val_ds], axis=0)
@@ -181,7 +195,9 @@ def plot_classification_report(model, val_ds, class_names):
     plt.title('Métricas por Classe')
     plt.legend()
     plt.grid(True, axis='y')
-    plt.show()
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAPH_DIR, 'classification_report.png'))
+    plt.close()
 
 
 def main():
